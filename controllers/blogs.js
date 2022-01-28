@@ -16,7 +16,7 @@ blogsRouter.get('/:id', async (request, response) => {
     }
 })
 
-blogsRouter.put('/:id', async (request, response) => {
+blogsRouter.put('/:id', middleware.userExtractor, async (request, response) => {
     const blog = await Blog.findById(request.params.id)
     const updatedBlog = {
         title: blog.title,
