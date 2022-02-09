@@ -1,14 +1,16 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
+const Comment = require('../models/comment')
 const middleware = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
-    const blogs = await Blog.find({}).populate('user', { username: 1, name: 1, id: 1 })
+    const blogs = await Blog.find({}).populate('user', { username: 1, name: 1, id: 1 }).populate('comments', {comment: 1, user: 1, id: 1, pubdate: 1}).populate({path: 'comments', populate: { path: 'user', select: 'id'}}).populate({path: 'comments', populate: { path: 'user', select: 'name'}})
     response.json(blogs)
 })
 
 blogsRouter.get('/:id', async (request, response) => {
-    const blog = await Blog.findById(request.params.id).populate('user', { username: 1, name: 1, id: 1 })
+    const blog = await Blog.findById(request.params.id).populate('user', { username: 1, name: 1, id: 1 }).populate('comments', {comment: 1, user: 1, id: 1, pubdate: 1}).populate({path: 'comments', populate: { path: 'user', select: 'id'}}).populate({path: 'comments', populate: { path: 'user', select: 'name'}})
     if (blog) {
         response.json(blog)
     } else {
@@ -45,7 +47,7 @@ blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
         const savedBlog = await blog.save()
         user.blogs = user.blogs.concat(savedBlog._id)
         await user.save()
-        const populatedSavedBlog = await Blog.findById(savedBlog._id).populate('user', { username: 1, name: 1, id: 1 })
+        const populatedSavedBlog = await Blog.findById(savedBlog._id).populate('user', { username: 1, name: 1, id: 1 }).populate('comments', {comment: 1, user: 1, id: 1, pubdate: 1})
         response.status(201).json(populatedSavedBlog)
     } else {
         return response.status(403).json({ error: 'You are not authorized to create a blog' })
@@ -53,10 +55,19 @@ blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
 })
 
 blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
-    const user = request.user
     const blog = await Blog.findById(request.params.id)
-
-    if (blog.user.toString() === user._id.toString()) {
+    
+    if (blog.user.toString() === request.user._id.toString()) {
+        for(i = blog.comments.length - 1; i >= 0; i--) {
+            const comment = await Comment.findById(blog.comments[i])
+            const commentUser = await User.findById(comment.user)
+            commentUser.comments = commentUser.comments.filter(c => JSON.stringify(c) !== JSON.stringify(comment.id))
+            await commentUser.save()
+            await Comment.findByIdAndRemove(comment.id)
+        }
+        const user = await User.findById(blog.user)
+        user.blogs = user.blogs.filter(b => JSON.stringify(b) !== JSON.stringify(request.params.id))
+        await user.save()
         await Blog.findByIdAndRemove(request.params.id)
         response.status(204).end()
     } else {
