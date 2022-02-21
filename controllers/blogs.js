@@ -29,7 +29,8 @@ blogsRouter.put('/:id', middleware.userExtractor, async (request, response) => {
     }
 
     const newBlog = await Blog.findByIdAndUpdate(request.params.id, updatedBlog, { new: true, runValidators: true })
-    response.json(newBlog)
+    const populatedNewBlog = await Blog.findById(newBlog._id).populate('user', { username: 1, name: 1, id: 1 }).populate('comments', {comment: 1, user: 1, id: 1, pubdate: 1})
+    response.json(populatedNewBlog)
 })
   
 blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
