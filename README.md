@@ -18,6 +18,8 @@ Password: password123!
 ## Description
 This is a MERN application developed with CRUD functionality. Users are able to sign-up and log in. If they are not logged in they can view blogs but once logged in they are able to view blogs, create blogs, like blogs, view users, and make comments. The frontend is done with React Bootstrap as well as Toastify for the toasts.
 
+The frontend of this application can be found at: https://github.com/S-Makrod/BlogAppFrontend.
+
 ## Pictures
 ![image](https://user-images.githubusercontent.com/53048085/153117934-f638ad03-32fb-4cc5-987e-bab93bef8437.png)
 ![image](https://user-images.githubusercontent.com/53048085/153117946-8841a5c9-188a-48c8-b6e5-69fb5151d33f.png)
